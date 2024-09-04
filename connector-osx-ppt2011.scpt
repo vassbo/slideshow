@@ -1,6 +1,7 @@
 --
 --  slideshow -- Observe and Control Slideshow Applications
---  Copyright (c) 2014-2023 Dr. Ralf S. Engelschall <http://engelschall.com>
+--  Copyright (c) 2014-2019 Dr. Ralf S. Engelschall <http://engelschall.com>
+--  Modifications from https://github.com/Olliebrown/showy
 --
 --  This Source Code Form is subject to the terms of the Mozilla Public
 --  License (MPL), version 2.0. If a copy of the MPL was not distributed
@@ -69,12 +70,10 @@ end pptGetState
 on pptGetCurSlide()
     try
         tell application "Microsoft PowerPoint"
-            set curSlide to 0
-            set theState to (slide state of slide show view of slide show window of active presentation)
-            if theState is (slide show state running) or theState is (slide show state paused) then
+            if slide state of slide show view of slide show window of active presentation is slide show state running then
                 --  currently in running slide show mode (for production)
-                set curSlide to (current show position of slide show view of slide show window of active presentation)
-            else if (exists active presentation) then
+                set curSlide to (slide number of slide of slide show view of slide show window of active presentation)
+            else
                 --  currently in editing mode (for testing)
                 set curSlide to (slide number of slide range of selection of document window 1)
             end if
@@ -84,6 +83,24 @@ on pptGetCurSlide()
         return 0
     end try
 end pptGetCurSlide
+
+--  get steps in current slide
+on pptGetCurSlideSteps()
+    try
+        tell application "Microsoft PowerPoint"
+            if slide state of slide show view of slide show window of active presentation is slide show state running then
+                --  currently in running slide show mode (for production)
+                set slideSteps to (print steps of slide of slide show view of slide show window of active presentation)
+            else
+                --  currently in editing mode (for testing)
+                set slideSteps to (print steps of slide range of selection of document window 1)
+            end if
+            return slideSteps
+        end tell
+    on error errMsg
+        return 0
+    end try
+end pptGetCurSlideSteps
 
 --  get maximum slide
 on pptGetMaxSlide()
@@ -103,14 +120,17 @@ on cmdSTATE()
     if state is "closed" then
         set position to 0
         set slides to 0
+        set steps to 0
     else
         set position to pptGetCurSlide()
         set slides to pptGetMaxSlide()
+        set steps to pptGetCurSlideSteps()
     end if
     return ("{ \"response\": { " & ¬
         "\"state\": \"" & state & "\", " & ¬
         "\"position\": " & position & ", " & ¬
-        "\"slides\": " & slides & " " & ¬
+        "\"slides\": " & slides & ", " & ¬
+        "\"steps\": " & steps & " " & ¬
     "} }")
 end cmdSTATE
 
@@ -216,79 +236,70 @@ on cmdCTRL(command, arg)
         end if
         tell application "Microsoft PowerPoint"
             set slideShowSettings to slide show settings of active presentation
-            set slideShowSettings's starting slide to 1
-            set slideShowSettings's range type to slide show range show all
-            set slideShowSettings's show type to slide show type speaker
-            set slideShowSettings's advance mode to slide show advance manual advance
-            run slide show slideShowSettings
+            -- set slideShowSettings's starting slide to 1
+            -- set slideShowSettings's ending slide to 1
+            -- set slideShowSettings's range type to slide show range
+            set slideShowSettings's show type to slide show type presenter
+            -- set slideShowSettings's advance mode to slide show advance manual advance
+            run slide show slideShowSettings -- BUGGY: starts blank
         end tell
     else if command is "STOP" then
         if state is not "viewing" then
             error "no active slideshow"
         end if
         tell application "Microsoft PowerPoint"
-            exit slide show (slideshow view of slide show window of active presentation)
+            exit slide show (slideshow view of slide show window 1)
         end tell
     else if command is "PAUSE" then
         if state is not "viewing" then
             error "no active slideshow"
         end if
         tell application "Microsoft PowerPoint"
-            set slide state of (slideshow view of slide show window of active presentation) to (slide show state black screen)
+            set slide state of (slideshow view of slide show window 1) to (slide show state black screen)
         end tell
     else if command is "RESUME" then
-        if state is not "editing" then
+        if state is not "viewing" then
             error "no active slideshow"
         end if
         tell application "Microsoft PowerPoint"
-            set slide state of (slideshow view of slide show window of active presentation) to (slide show state running)
+            -- set slide state of (slideshow view of slide show window 1) to (slide show state paused)
+            go to slide (view of document window 1) number ¬
+                (slide number of slide of slide show view of slide show window of active presentation)
         end tell
     else if command is "FIRST" then
         if state is not "viewing" then
             error "no active slideshow"
         end if
         tell application "Microsoft PowerPoint"
-            go to first slide (slideshow view of slide show window of active presentation)
+            go to first slide (slideshow view of slide show window 1)
         end tell
     else if command is "LAST" then
         if state is not "viewing" then
             error "no active slideshow"
         end if
         tell application "Microsoft PowerPoint"
-            go to last slide (slideshow view of slide show window of active presentation)
+            go to last slide (slideshow view of slide show window 1)
         end tell
     else if command is "GOTO" then
         if state is not "viewing" then
             error "no active slideshow"
         end if
         tell application "Microsoft PowerPoint"
-            set dstSlide to (arg as integer)
-            set srcSlide to (current show position of slide show view of slide show window of active presentation)
-            if srcSlide < dstSlide then
-                repeat while srcSlide < dstSlide
-                    go to next slide (slideshow view of slide show window of active presentation)
-                    set srcSlide to (current show position of slide show view of slide show window of active presentation)
-                end repeat
-            else if srcSlide > dstSlide then
-                repeat while srcSlide > dstSlide
-                    go to previous slide (slideshow view of slide show window of active presentation)
-                    set srcSlide to (current show position of slide show view of slide show window of active presentation)
-                end repeat
-            end if
+            go to slide (view of document window 1) number (arg as integer) -- BUGGY: does not do anything
         end tell
     else if command is "PREV" then
         if state is not "viewing" then
             error "no active slideshow"
         end if
         tell application "Microsoft PowerPoint"
-            go to previous slide (slideshow view of slide show window of active presentation)
+            go to previous slide (slideshow view of slide show window 1)
         end tell
     else if command is "NEXT" then
         if state is not "viewing" then
             error "no active slideshow"
         end if
         tell application "Microsoft PowerPoint"
-            go to next slide (slideshow view of slide show window of active presentation)
+            go to next slide (slideshow view of slide show window 1)
         end tell
     end if
     return "{ \"response\": \"OK\" }"
@@ -324,8 +335,13 @@ on run argv
             set output to "{ \"error\": \"invalid command\" }"
         end if
     on error errMsg
-        set output to ("{ \"error\": \"" & errMsg & "\" }")
+        set astid to AppleScript's text item delimiters
+        set AppleScript's text item delimiters to quote
+        set errMsg to text items of errMsg
+        set AppleScript's text item delimiters to "'"
+        set errMsg to errMsg as text
+        set AppleScript's text item delimiters to astid        
+        set output to "{ \"error\": \"" & errMsg & "\" }"
     end try
     copy output to stdout
 end run
-

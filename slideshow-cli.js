@@ -41,11 +41,11 @@ var commands = {
     /*  API-derived  */
     "stat":   [],
     "info":   [],
-    "boot":   [],
+    "boot":   [ "presentation-filename" ],
     "quit":   [],
     "open":   [ "presentation-filename" ],
     "close":  [],
-    "start":  [],
+    "start":  [ "presenter-view-boolean" ],
     "stop":   [],
     "pause":  [],
     "resume": [],

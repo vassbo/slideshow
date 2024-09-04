@@ -12,20 +12,40 @@
 */
 
 /*  determine whether application is running  */
-var activeApplication = function () {
+var activeApplication = function (path) {
     var app;
     try {
         var locator = WScript.CreateObject("WbemScripting.SWbemLocator");
         var service = locator.ConnectServer(".", "root\\cimv2");
         var procs = service.ExecQuery("SELECT * FROM Win32_Process WHERE Name = 'POWERPNT.EXE'");
-        if (procs.Count > 0)
-            app = WScript.CreateObject("PowerPoint.Application");
-        else
-            app = null;
-    }
-    catch (e) {
+
+        if (procs.Count > 0) app = WScript.CreateObject("PowerPoint.Application");
+        else app = null
+        
+        if (path && (!app || app.Visible === 0)) {
+            // open the file in powerpoint
+            var fso = WScript.CreateObject("Scripting.FileSystemObject");
+            fn = fso.GetAbsolutePathName(path);
+            var WshShell = WScript.CreateObject("WScript.Shell");
+            // https://smallbusiness.chron.com/write-cmd-script-53226.html
+            WshShell.Run('powerpnt.exe /C ' + fn);
+
+            // could use powershell to open in preferred presentation program
+            // var openFileScript = "Start-Process " + fn;
+            // WshShell.Run('cmd /c start /min "" powershell.exe -WindowStyle hidden -ExecutionPolicy Bypass -Command "' + openFileScript + '"');
+
+            // give some time to start process & open program
+            WScript.Sleep(500);
+
+            // get newly opened process
+            var procs2 = service.ExecQuery("SELECT * FROM Win32_Process WHERE Name = 'POWERPNT.EXE'");
+            if (procs2.Count > 0) app = WScript.CreateObject("PowerPoint.Application");
+            else app = null;
+        }
+    } catch (e) {
         app = null;
     }
+
     return app;
 };
 
@@ -147,59 +167,66 @@ var cmdINFO = function () {
 
 /*  control application  */
 var cmdCONTROL = function (cmd, arg) {
-    var app  = activeApplication();
+    var app  = activeApplication(arg);
     var pres = activePresentation(app);
     var ss   = activeSlideshow(app);
 
     /*  sanity check contexts  */
-    if (cmd !== "BOOT") {
-        if (app === null)
-            throw new Error("application still not running");
+    if (app === null) {
+        throw new Error("application still not running");
     }
     if (cmd.match(/(CLOSE|START)$/)) {
-        if (pres === null)
-            throw new Error("still no active presentation");
+        if (pres === null) throw new Error("still no active presentation");
     }
     if (cmd.match(/(STOP|PAUSE|RESUME|FIRST|LAST|GOTO|PREV|NEXT)$/)) {
-        if (ss === null)
-            throw new Error("still no running slideshow");
+        if (ss === null) throw new Error("still no running slideshow");
     }
 
     /*  dispatch actions  */
-    if (cmd === "BOOT" && app !== null)
-        app.Visible = true;
-    else if (cmd === "QUIT")
+    if (cmd === "BOOT" && app !== null) {
+        if (!app.Visible) app.Visible = true;
+    } else if (cmd === "QUIT") {
+        // this might not work
+        WScript.Sleep(2000);
         app.Quit();
-    else if (cmd === "OPEN") {
+    } else if (cmd === "OPEN") {
         var fso = WScript.CreateObject("Scripting.FileSystemObject");
         fn = fso.GetAbsolutePathName(arg);
-        app.Presentations.Open(fn);
-    }
-    else if (cmd === "CLOSE") {
+
+        // this opens to nothing for some reason
+        // app.Presentations.Open(fn);
+
+        var WshShell = WScript.CreateObject("WScript.Shell");
+        WshShell.Run('powerpnt.exe /C ' + fn);
+
+        // give time to open! (so slide count etc. are correct)
+        WScript.Sleep(200);
+    } else if (cmd === "CLOSE") {
         pres.Close();
-    }
-    else if (cmd === "START") {
-        pres.SlideShowSettings.StartingSlide = 1;
-        pres.SlideShowSettings.EndingSlide = pres.Slides.Count;
+    } else if (cmd === "START") {
+        if (pres.SlideShowSettings.StartingSlide !== 1) pres.SlideShowSettings.StartingSlide = 1;
+        if (pres.SlideShowSettings.EndingSlide !== 1) pres.SlideShowSettings.EndingSlide = pres.Slides.Count;
+        pres.SlideShowSettings.ShowPresenterView = (arg === true);
         pres.SlideShowSettings.Run();
-    }
-    else if (cmd === "STOP") {
+    } else if (cmd === "STOP") {
         ss.View.Exit();
-    }
-    else if (cmd === "PAUSE")
+    } else if (cmd === "PAUSE") {
+        // currently not working:
         ss.View.State = 3 /* ppSlideShowBlackScreen */;
-    else if (cmd === "RESUME")
+    } else if (cmd === "RESUME") {
         ss.View.GotoSlide(ss.View.CurrentShowPosition);
-    else if (cmd === "FIRST")
+    } else if (cmd === "FIRST") {
         ss.View.First();
-    else if (cmd === "LAST")
+    } else if (cmd === "LAST") {
         ss.View.Last();
-    else if (cmd === "GOTO")
+    } else if (cmd === "GOTO") {
         ss.View.GotoSlide(parseInt(arg, 10));
-    else if (cmd === "PREV")
+    } else if (cmd === "PREV") {
         ss.View.Previous();
-    else if (cmd === "NEXT")
+    } else if (cmd === "NEXT") {
         ss.View.Next();
+    }
+
     return "{ \"response\": \"OK\" }";
 };
 

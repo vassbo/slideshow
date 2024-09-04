@@ -1,7 +1,7 @@
 #!/bin/sh
 ##
 ##  slideshow -- Observe and Control Slideshow Applications
-##  Copyright (c) 2014-2023 Dr. Ralf S. Engelschall <http://engelschall.com>
+##  Copyright (c) 2014-2019 Dr. Ralf S. Engelschall <http://engelschall.com>
 ##
 ##  This Source Code Form is subject to the terms of the Mozilla Public
 ##  License (MPL), version 2.0. If a copy of the MPL was not distributed
@@ -28,11 +28,10 @@ case "$0" in
         IFS=$OIFS
         ;;
 esac
-basedir=`echo "$basedir" | \
-    sed -e 's;/\.$;;g' \
-        -e 's;/\./;/;g' \
-        -e 's;/[^/][^/]*/\.\./;/;g' \
-        -e 's;/[^/][^/]*/\.\.$;;g'`
+basedir=`echo "$basedir" | sed -e 's;/\.$;;g'`
+basedir=`echo "$basedir" | sed -e 's;/\./;/;g'`
+basedir=`echo "$basedir" | sed -e 's;/[^/][^/]*/\.\./;/;g'`
+basedir=`echo "$basedir" | sed -e 's;/[^/][^/]*/\.\.$;;g'`
 
 #   provide the stdin loop
 #   (because AppleScript is not easily able to do this)
@@ -44,7 +43,6 @@ while true; do
     fi
     command=`echo "$request" | sed -e 's;^.*command": *"\([^"]*\)".*$;\1;'`
 
-    #   let AppleScript produce the response
-    osascript "$basedir/connector-osx-ppt2011.scpt" $command
+    #   let JavaScript for Applications produce the response
+    osascript -l JavaScript "$basedir/connector-osx-ppt201X.js" $command 2>&1
 done
-

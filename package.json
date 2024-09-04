@@ -1,44 +1,51 @@
 {
-    "name":        "slideshow",
-    "homepage":    "http://github.com/rse/slideshow",
+    "name": "slideshow",
+    "homepage": "http://github.com/rse/slideshow",
     "description": "Observe and Control Slideshow Applications",
-    "version":     "1.2.2",
-    "license":     "MPL",
+    "version": "1.2.2",
+    "license": "MPL",
     "author": {
-        "name":    "Dr. Ralf S. Engelschall",
-        "email":   "rse@engelschall.com",
-        "url":     "http://engelschall.com"
+        "name": "Dr. Ralf S. Engelschall",
+        "email": "rse@engelschall.com",
+        "url": "http://engelschall.com"
     },
     "keywords": [
-        "slide", "slideshow", "presentation",
-        "powerpoint", "keynote", "applescript", "wsh", "jscript"
+        "slide",
+        "slideshow",
+        "presentation",
+        "powerpoint",
+        "keynote",
+        "applescript",
+        "wsh",
+        "jscript"
     ],
     "repository": {
         "type": "git",
-        "url":  "git+https://github.com/rse/slideshow.git"
+        "url": "git+https://github.com/rse/slideshow.git"
     },
     "bugs": {
-        "url":  "http://github.com/rse/slideshow"
+        "url": "http://github.com/rse/slideshow"
     },
-    "main":  "slideshow-api.js",
+    "main": "slideshow-api.js",
     "types": "slideshow-api.d.ts",
     "bin": {
         "slideshow": "slideshow-cli.js"
     },
     "devDependencies": {
-        "grunt":                "1.6.1",
-        "grunt-cli":            "1.4.3",
+        "grunt": "1.6.1",
+        "grunt-cli": "1.4.3",
+        "grunt-contrib-clean": "2.0.1",
         "grunt-contrib-jshint": "3.2.0",
-        "grunt-contrib-clean":  "2.0.1",
-        "grunt-eslint":         "24.3.0"
+        "grunt-eslint": "24.3.0"
     },
-    "dependencies" : {
-        "event-stream":         "4.0.1",
-        "bluebird":             "3.7.2",
-        "chalk":                "4.1.2"
+    "dependencies": {
+        "chalk": "4.1.2",
+        "event-stream": "4.0.1"
     },
-    "upd":                      [ "!chalk" ],
+    "upd": [
+        "!chalk"
+    ],
     "engines": {
-        "node":                 ">=8.0.0"
+        "node": ">=8.0.0"
     }
 }

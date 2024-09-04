@@ -16,11 +16,11 @@ export default class Slideshow {
     request (request: any):     Promise<any>
     stat    ():                 Promise<{ state: string, position: number, slides: number }>
     info    ():                 Promise<{ titles: string[], notes: string[] }>
-    boot    ():                 Promise<"OK">
+    boot    (filename: string): Promise<"OK">
     quit    ():                 Promise<"OK">
     open    (filename: string): Promise<"OK">
     close   ():                 Promise<"OK">
-    start   ():                 Promise<"OK">
+    start   (presenterView?: boolean): Promise<"OK">
     stop    ():                 Promise<"OK">
     pause   ():                 Promise<"OK">
     resume  ():                 Promise<"OK">

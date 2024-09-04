@@ -16,7 +16,6 @@ var os       = require("os");
 var path     = require("path");
 var spawn    = require("child_process").spawn;
 var es       = require("event-stream");
-var Promise  = require("bluebird");
 
 /*  the supported connectors  */
 var connectors = {
@@ -73,23 +72,23 @@ var connector = function (application) {
 /*  the connector API methods  */
 connector.prototype = {
     request: function (request) {
-        var promise = Promise.pending();
-        this.responses.push(function (response) {
-            try {
-                response = JSON.parse(response);
-            }
-            catch (ex) {
-                promise.reject("Invalid response type from connector: " + ex);
-            }
-            if (typeof response.error === "string")
-                promise.reject(response.error);
-            else if (typeof response.response !== "undefined")
-                promise.resolve(response.response);
-            else
-                promise.reject("Invalid response structure from connector");
-        });
         this.io.write(JSON.stringify(request) + "\r\n");
-        return promise.promise;
+        return new Promise((resolve, reject) => {
+            this.responses.push(function (response) {
+                try {
+                    response = JSON.parse(response);
+                } catch (ex) {
+                    reject("Invalid response type from connector: " + ex);
+                }
+
+                if (typeof response.error === "string")
+                    reject(response.error || "Something went wrong with the presentation controller");
+                else if (typeof response.response !== "undefined")
+                    resolve(response.response);
+                else
+                    reject("Invalid response structure from connector");
+            });
+        })
     },
     end: function () {
         this.io.end();
