@@ -43,7 +43,8 @@ var connector = function (application) {
     /*  spawn the connector as a child process  */
     this.c = spawn(filename, [], {
         stdio: [ "pipe", "pipe", process.stderr ],
-        env: { "CONNECTOR": "FIXME" }
+        env: { "CONNECTOR": "FIXME" },
+        shell: process.platform === 'win32' ? true : undefined,
     });
 
     /*  set the stdin/stdout pipes to UTF-8 encoding mode  */
