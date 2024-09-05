@@ -240,8 +240,11 @@ while (!WScript.StdIn.AtEndOfStream) {
     var argv = line.split(/\s+/);
     var cmd = argv[0];
     var arg = "";
-    if (argv.length > 1)
-        arg = argv[1];
+    if (argv.length > 1) {
+        // get the rest (file name might include spaces)
+        var index = line.indexOf(' ');
+        arg = line.substring(index + 1);
+    }
 
     /*  dispatch command  */
     var out = "";
