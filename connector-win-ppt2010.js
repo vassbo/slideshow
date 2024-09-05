@@ -28,7 +28,7 @@ var activeApplication = function (path) {
             fn = fso.GetAbsolutePathName(path);
             var WshShell = WScript.CreateObject("WScript.Shell");
             // https://smallbusiness.chron.com/write-cmd-script-53226.html
-            WshShell.Run('powerpnt.exe /C ' + fn);
+            WshShell.Run('powerpnt.exe /C "' + fn + '"');
 
             // could use powershell to open in preferred presentation program
             // var openFileScript = "Start-Process " + fn;
@@ -197,7 +197,7 @@ var cmdCONTROL = function (cmd, arg) {
         // app.Presentations.Open(fn);
 
         var WshShell = WScript.CreateObject("WScript.Shell");
-        WshShell.Run('powerpnt.exe /C ' + fn);
+        WshShell.Run('powerpnt.exe /C "' + fn + '"');
 
         // give time to open! (so slide count etc. are correct)
         WScript.Sleep(200);
