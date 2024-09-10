@@ -13,6 +13,7 @@
 
 /*  thid-party requirements  */
 var os       = require("os");
+var fs       = require("fs");
 var path     = require("path");
 var spawn    = require("child_process").spawn;
 var es       = require("event-stream");
@@ -38,6 +39,8 @@ var connector = function (application) {
     if (typeof cn === "undefined")
         throw new Error("unsupported platform/application combination: " + id);
     var filename = path.join(__dirname, cn);
+    // fix for electron build
+    if (fs.existsSync(process.resourcesPath)) filename = path.join(process.resourcesPath, "slideshow", cn);
 
     /*  spawn the connector as a child process  */
     this.c = spawn(filename, [], {
